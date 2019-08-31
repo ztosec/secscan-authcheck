@@ -1,0 +1,69 @@
+{% extends "layout.html" %}
+
+{% block body %}
+<div class="x-body">
+    <blockquote class="layui-elem-quote">欢迎{% if is_manager() %}管理员{% endif %}：
+        <span class="x-red">{{ session['username'] }}</span>！当前时间:{{ time_now() }}
+    </blockquote>
+    <fieldset class="layui-elem-field">
+        <legend>数据统计</legend>
+        <div class="layui-field-box">
+            <div class="layui-col-md12">
+                <div class="layui-card">
+                    <div class="layui-card-body">
+                        <div class="layui-carousel x-admin-carousel x-admin-backlog" lay-anim="" lay-indicator="inside"
+                             lay-arrow="none" style="width: 100%; height: 90px;">
+                            <div carousel-item="">
+                                <ul class="layui-row layui-col-space10 layui-this">
+                                    <li class="layui-col-xs2">
+                                        <a href="javascript:;" class="x-admin-backlog-body">
+                                            <h3>工作空间</h3>
+                                            <p>
+                                                <cite>{{ ws_num }}</cite></p>
+                                        </a>
+                                    </li>
+                                    <li class="layui-col-xs2">
+                                        <a href="javascript:;" class="x-admin-backlog-body">
+                                            <h3>请求数</h3>
+                                            <p>
+                                                <cite>{{ request_num }}</cite></p>
+                                        </a>
+                                    </li>
+                                    <li class="layui-col-xs2">
+                                        <a href="javascript:;" class="x-admin-backlog-body">
+                                            <h3>使用人数</h3>
+                                            <p>
+                                                <cite>{{ people_num }}</cite></p>
+                                        </a>
+                                    </li>
+                                    <li class="layui-col-xs2">
+                                        <a href="javascript:;" class="x-admin-backlog-body">
+                                            <h3>部门数量</h3>
+                                            <p>
+                                                <cite>{{ depart_num }}</cite></p>
+                                        </a>
+                                    </li>
+                                    <li class="layui-col-xs2">
+                                        <a href="javascript:;" class="x-admin-backlog-body">
+                                            <h3>系统数量</h3>
+                                            <p>
+                                                <cite>{{ system_num }}</cite></p>
+                                        </a>
+                                    </li>
+                                    <li class="layui-col-xs2">
+                                        <a href="javascript:;" class="x-admin-backlog-body">
+                                            <h3>主机数量</h3>
+                                            <p>
+                                                <cite>{{ hosts_num }}</cite></p>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </fieldset>
+</div>
+{% endblock %}

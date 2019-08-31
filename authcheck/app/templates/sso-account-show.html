@@ -1,0 +1,44 @@
+{% extends "layout.html" %}
+
+{% block head %}
+    <!-- 让IE8/9支持媒体查询，从而兼容栅格 -->
+    <!--[if lt IE 9]>
+<script src="{{ url_for('static', filename='lib/html5.min.js') }}"></script>
+<script src="{{ url_for('static', filename='lib/respond.min.js') }}"></script>
+<![endif]-->
+{% endblock %}
+
+{% block body %}
+    <div class="x-body">
+        <table class="layui-table">
+            <colgroup>
+                <col width="150">
+                <col width="200">
+            </colgroup>
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>{{ account.id }}</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td>用户名</td>
+                <td>{{ account.username }}</td>
+            </tr>
+            <tr>
+                <td>密码</td>
+                <td>{{ account.password }}</td>
+            </tr>
+            <tr>
+                <td>账号描述</td>
+                <td>{{ account.describe }}</td>
+            </tr>
+            <tr>
+                <td>状态</td>
+                <td>{{ account.status }}</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

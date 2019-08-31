@@ -1,0 +1,75 @@
+{% extends "layout.html" %}
+
+{% block head %}
+<!-- 让IE8/9支持媒体查询，从而兼容栅格 -->
+<!--[if lt IE 9]>
+<script src="{{ url_for('static', filename='lib/html5.min.js') }}"></script>
+<script src="{{ url_for('static', filename='lib/respond.min.js') }}"></script>
+<![endif]-->
+{% endblock %}
+
+{% block body %}
+<div class="x-body">
+    <xblock>
+        <button class="layui-btn" onclick="x_admin_show('添加订单','')"><i
+                class="layui-icon"></i>添加订单
+        </button>
+        <span class="x-right" style="line-height:40px">共有数据：{{ count }} 条</span>
+    </xblock>
+    <table class="layui-table">
+        <thead>
+        <tr>
+            <th>
+                <div class="layui-unselect header layui-form-checkbox" lay-skin="primary"><i
+                        class="layui-icon">&#xe605;</i></div>
+            </th>
+            <th>id</th>
+            <th>order_no</th>
+            <th>recv</th>
+            <th>total_amount</th>
+            <th>order_status</th>
+            <th>order_time</th>
+            <th>操作</th>
+        </thead>
+        <tbody>
+        {% for order in orders %}
+        <tr>
+            <td>
+                <div class="layui-unselect layui-form-checkbox" lay-skin="primary" data-id='2'><i
+                        class="layui-icon">&#xe605;</i>
+                </div>
+            </td>
+            <td>{{ order.id }}</td>
+            <td>{{ order.order_no }}</td>
+            <td>{{ order.recv }}</td>
+            <td>{{ order.total_amount }}</td>
+            <td>{{ order.order_status }}</td>
+            <td>{{ order.order_time }}</td>
+            <td class="td-manage">
+                <a title="查看" onclick="order_info(this,'{{ url_for('order_op', _id=order.id) }}')"
+                   href="javascript:;">
+                    <i class="layui-icon">&#xe63c;</i>
+                </a>
+            </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script>
+    function order_info(obj, url) {
+        $.ajax({
+            url: url,
+            type: 'get',
+            success: function (msg) {
+                layer.open({
+                    title: msg.flag === 'success' ? '订单信息' : '错误'
+                    , content: JSON.stringify(msg.msg)
+                });
+            }
+        });
+    }
+
+</script>
+{% endblock %}

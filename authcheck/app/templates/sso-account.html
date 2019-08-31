@@ -1,0 +1,86 @@
+{% extends "layout.html" %}
+
+{% block head %}
+    <!-- 让IE8/9支持媒体查询，从而兼容栅格 -->
+    <!--[if lt IE 9]>
+<script src="{{ url_for('static', filename='lib/html5.min.js') }}"></script>
+<script src="{{ url_for('static', filename='lib/respond.min.js') }}"></script>
+<![endif]-->
+{% endblock %}
+
+{% block body %}
+    <div class="x-body">
+        <xblock>
+            <button class="layui-btn" onclick="x_admin_show('录入账号','{{ url_for('web.sso_account_add') }}')"><i
+                    class="layui-icon"></i>录入账号
+            </button>
+            <span class="x-right" style="line-height:40px">共有数据：{{ hits.count() }} 条</span>
+        </xblock>
+        <table class="layui-table">
+            <thead>
+            <tr>
+                <th>
+                    <div class="layui-unselect header layui-form-checkbox" lay-skin="primary"><i
+                            class="layui-icon">&#xe605;</i></div>
+                </th>
+                <th>用户名</th>
+                <th>描述</th>
+                <th>状态</th>
+                <th>操作</th>
+            </thead>
+            <tbody>
+            {% for account in hits %}
+                <tr>
+                    <td>
+                        <div class="layui-unselect layui-form-checkbox" lay-skin="primary" data-id='2'><i
+                                class="layui-icon">&#xe605;</i>
+                        </div>
+                    </td>
+                    <td>{{ account.username }}</td>
+                    <td>{{ account.describe }}</td>
+                    <td>{{ account.status }}</td>
+                    <td class="td-manage">
+                        <a title="查看"
+                           onclick="x_admin_show('明细','{{ url_for('web.sso_account_show', _id=account.id) }}')"
+                           href="javascript:;">
+                            <i class="layui-icon">&#xe63c;</i>
+                        </a>
+                        <a title="编辑"
+                           onclick="x_admin_show('编辑','{{ url_for('web.sso_account_edit', _id=account.id) }}')"
+                           href="javascript:;">
+                            <i class="layui-icon">&#xe642;</i>
+                        </a>
+                        <a title="删除" onclick="account_del(this,'{{ url_for('api.sso_account_op', _id=account.id) }}')"
+                           href="javascript:;">
+                            <i class="layui-icon">&#xe640;</i>
+                        </a>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        /*角色-删除*/
+        function account_del(obj, url) {
+            layer.confirm('确认要删除吗？', function (index) {
+                $.ajax({
+                    url: url,
+                    type: "delete",
+                    success: function (msg) {
+                        if (msg.flag != 'success') {
+                            layer.msg(msg.data, {icon: 2});
+                        } else {
+                            $(obj).parents("tr").remove();
+                            layer.msg('已删除!', {icon: 1});
+                        }
+                    }, error: function () {
+                        layer.msg('删除异常！', {icon: 2});
+                    }
+                });
+            });
+        }
+
+    </script>
+{% endblock %}

@@ -1,0 +1,36 @@
+version: '3.7'
+services:
+  sso:
+    build:
+      context: .
+      dockerfile: Dockerfile-sso
+    ports:
+      - "7373:7373"
+    environment:
+      port: 7373
+      site1_redirect_url: http://your-ip:8000/authorized
+      site2_redirect_url: http://your-ip:8001/authorized
+
+  site1:
+    build:
+      context: .
+      dockerfile: Dockerfile-site1
+    ports:
+      - "8000:8000"
+    environment:
+      port: 8000
+      base_url: http://your-ip:7373/api/
+      access_token_url: http://your-ip:7373/oauth/token
+      authorize_url: http://your-ip:7373/oauth/authorize
+
+  site2:
+    build:
+      context: .
+      dockerfile: Dockerfile-site2
+    ports:
+      - "8001:8001"
+    environment:
+      port: 8001
+      base_url: http://your-ip:7373/api/
+      access_token_url: http://your-ip:7373/oauth/token
+      authorize_url: http://your-ip:7373/oauth/authorize

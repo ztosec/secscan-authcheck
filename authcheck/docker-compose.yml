@@ -1,0 +1,28 @@
+version: '3.7'
+services:
+  authcheck:
+    build: .
+    ports:
+      - "8888:8888"
+    volumes:
+      - $PWD/log:/var/log
+    environment:
+      mongo_database: acc
+      mongo_host: mongo
+      mongo_port: 27017
+      # mongo_user: root
+      # mongo_password: 123456
+      redis_host: redis
+      redis_port: 6379
+      redis_db: 0
+      redis_password: 123456
+    depends_on:
+      - redis
+      - mongo
+  redis:
+    image: redis:alpine
+    restart: always
+    command: redis-server --requirepass 123456
+  mongo:
+    image: mongo
+    restart: always

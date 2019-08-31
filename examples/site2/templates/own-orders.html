@@ -1,0 +1,61 @@
+{% extends "layout.html" %}
+
+{% block head %}
+<!-- 让IE8/9支持媒体查询，从而兼容栅格 -->
+<!--[if lt IE 9]>
+<script src="{{ url_for('static', filename='lib/html5.min.js') }}"></script>
+<script src="{{ url_for('static', filename='lib/respond.min.js') }}"></script>
+<![endif]-->
+{% endblock %}
+
+{% block body %}
+<div class="x-body">
+    <xblock>
+        <button class="layui-btn" onclick="x_admin_show('创建订单','')"><i
+                class="layui-icon"></i>创建订单
+        </button>
+        <span class="x-right" style="line-height:40px">共有数据：{{ count }} 条</span>
+    </xblock>
+    <table class="layui-table">
+        <thead>
+        <tr>
+            <th>
+                <div class="layui-unselect header layui-form-checkbox" lay-skin="primary"><i
+                        class="layui-icon">&#xe605;</i></div>
+            </th>
+            <th>id</th>
+            <th>order_no</th>
+            <th>recv_phone</th>
+            <th>send_phone</th>
+            <th>amount</th>
+            <th>order_status</th>
+            <th>order_time</th>
+            <th>操作</th>
+        </thead>
+        <tbody>
+        {% for order in orders %}
+        <tr>
+            <td>
+                <div class="layui-unselect layui-form-checkbox" lay-skin="primary" data-id='2'><i
+                        class="layui-icon">&#xe605;</i>
+                </div>
+            </td>
+            <td>{{ order.id }}</td>
+            <td>{{ order.order_no }}</td>
+            <td>{{ order.recv_phone }}</td>
+            <td>{{ order.send_phone }}</td>
+            <td>{{ order.amount }}</td>
+            <td>{{ order.order_status }}</td>
+            <td>{{ order.order_time }}</td>
+            <td class="td-manage">
+            </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script>
+
+</script>
+{% endblock %}

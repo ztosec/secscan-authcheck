@@ -1,0 +1,25 @@
+FROM alpine:latest
+
+MAINTAINER sec@zto.cn
+
+RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.ustc.edu.cn/g' /etc/apk/repositories
+
+RUN apk update && apk upgrade && apk add python3
+
+ENV host 0.0.0.0
+ENV port 8000
+ENV base_url http://192.168.44.129:7373/api/
+ENV access_token_url http://192.168.44.129:7373/oauth/token
+ENV authorize_url http://192.168.44.129:7373/oauth/authorize
+ENV LANG C.UTF-8
+
+EXPOSE 8000
+
+COPY requirements.txt /opt/
+COPY site1 /opt/site1
+
+WORKDIR /opt/
+
+RUN python3 -m pip install -r requirements.txt -i http://mirrors.aliyun.com/pypi/simple/ --trusted-host mirrors.aliyun.com
+
+CMD python3 site1/client.py

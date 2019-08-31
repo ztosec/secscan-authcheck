@@ -1,0 +1,89 @@
+{% extends "layout.html" %}
+
+{% block head %}
+    <!-- 让IE8/9支持媒体查询，从而兼容栅格 -->
+    <!--[if lt IE 9]>
+<script src="{{ url_for('static', filename='lib/html5.min.js') }}"></script>
+<script src="{{ url_for('static', filename='lib/respond.min.js') }}"></script>
+<![endif]-->
+{% endblock %}
+
+{% block body %}
+    <div class="x-body">
+        <form class="layui-form" id="account-form" action="{{ url_for('api.sso_account') }}" method="post">
+            {% if account.id %}
+                <input type="hidden" id="id" name="id" value="{{ account.id }}">
+            {% endif %}
+            <div class="layui-form-item">
+                <label for="account" class="layui-form-label">
+                    <span class="x-red">*</span>用户名
+                </label>
+                <div class="layui-input-inline">
+                    <input type="text" id="username" name="username" lay-verify="required"
+                           autocomplete="off" class="layui-input" value="{{ account.username }}">
+                </div>
+                <div class="layui-form-mid layui-word-aux">
+                    <span class="x-red">*</span>用户名
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label for="password" class="layui-form-label">
+                    <span class="x-red">*</span>密码
+                </label>
+                <div class="layui-input-inline">
+                    <input type="password" id="password" name="password" lay-verify="required"
+                           autocomplete="off" class="layui-input" value="{{ account.password }}">
+                </div>
+                <div class="layui-form-mid layui-word-aux">
+                    <span class="x-red">*</span> 密码
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label for="describe" class="layui-form-label">
+                    账号描述
+                </label>
+                <div class="layui-input-inline">
+                    <input type="text" id="describe" name="describe"
+                           autocomplete="off" class="layui-input" value="{{ account.describe }}">
+                </div>
+                <div class="layui-form-mid layui-word-aux">
+                    对该账号简要的描述
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label for="describe" class="layui-form-label">
+                </label>
+                <input class="layui-btn" lay-filter="add" value="确定" type="button" onclick="account_update()">
+            </div>
+        </form>
+    </div>
+    <script>
+        function account_update() {
+            let url = $('#account-form')[0].action;
+            if ($("#id").length === 1) {
+                url = url + "/" + $("#id").val();
+            }
+            $.ajax({
+                url: url,
+                type: 'PUT',
+                data: JSON.stringify({
+                    username: $("#username").val(),
+                    password: $("#password").val(),
+                    describe: $("#describe").val(),
+                }),
+                success: function (msg) {
+                    if (msg.flag !== 'success') {
+                        layer.msg(msg.data, {icon: 2});
+                    } else {
+                        var index = parent.layer.getFrameIndex(window.name);
+                        //关闭当前frame
+                        parent.layer.close(index);
+                        // 可以对父窗口进行刷新
+                        x_admin_father_reload();
+                    }
+                }
+            });
+        }
+    </script>
+
+{% endblock %}

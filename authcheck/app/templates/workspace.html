@@ -1,0 +1,208 @@
+{% extends "layout.html" %}
+
+{% block head %}
+    <!-- 让IE8/9支持媒体查询，从而兼容栅格 -->
+    <!--[if lt IE 9]>
+<script src="{{ url_for('static', filename='lib/html5.min.js') }}"></script>
+<script src="{{ url_for('static', filename='lib/respond.min.js') }}"></script>
+<![endif]-->
+{% endblock %}
+
+{% block body %}
+    <div class="x-body">
+        <div class="layui-row">
+            <form id="p_form" action="{{ url_for('web.workspace') }}?page={{ page }}&size={{ size }}"
+                  method="POST" class="layui-form layui-col-space5">
+                <input id="url" type="hidden" value="{{ url_for('web.workspace') }}">
+                <div class="layui-input-inline layui-show-xs-block">
+                    <input type="text" value="{{ form.cname }}" name="cname" placeholder="创建人"
+                           autocomplete="off" class="layui-input">
+                </div>
+                <div class="layui-input-inline layui-show-xs-block">
+                    <input type="text" value="{{ form.depart_name }}" name="depart_name" placeholder="部门"
+                           autocomplete="off"
+                           class="layui-input">
+                </div>
+                <div class="layui-input-inline layui-show-xs-block">
+                    <input type="text" value="{{ form.system_name }}" name="system_name" placeholder="系统"
+                           autocomplete="off"
+                           class="layui-input">
+                </div>
+                <div class="layui-input-inline layui-show-xs-block">
+                    <select name="status">
+                        <option value="">状态</option>
+                        {% for tp in workspace_status() %}
+                            {% if form.status == tp %}
+                                <option value="{{ tp }}" selected> {{ tp }}</option>
+                            {% else %}
+                                <option value="{{ tp }}"> {{ tp }}</option>
+                            {% endif %}
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="layui-input-inline layui-show-xs-block">
+                    <button class="layui-btn" lay-submit="" lay-filter="sreach">
+                        <i class="layui-icon">&#xe615;</i></button>
+                </div>
+            </form>
+        </div>
+        <xblock>
+            <button class="layui-btn" onclick="x_admin_show('工作空间','{{ url_for('web.workspace_create') }}')"><i
+                    class="layui-icon"></i>创建空间
+            </button>
+            <span class="x-right" style="line-height:40px">共有数据：{{ count }} 条</span>
+        </xblock>
+        <table class="layui-table">
+            <thead>
+            <tr>
+                <th>
+                    <div class="layui-unselect header layui-form-checkbox" lay-skin="primary"><i
+                            class="layui-icon">&#xe605;</i></div>
+                </th>
+                <th>创建人</th>
+                <th>部门</th>
+                <th>系统</th>
+                <th>请求数</th>
+                <th>状态</th>
+                <th>创建时间</th>
+                <th>角色信息</th>
+                <th>操作</th>
+            </thead>
+            <tbody>
+            {% for ws in hits %}
+                <tr>
+                    <td>
+                        <div class="layui-unselect layui-form-checkbox" lay-skin="primary" data-id='2'><i
+                                class="layui-icon">&#xe605;</i>
+                        </div>
+                    </td>
+                    <td>{{ ws.cname }}</td>
+
+                    <td>{{ ws.depart_name }}</td>
+                    <td>{{ ws.system_name }}</td>
+
+                    <td>{{ ws.id | request_num }}</td>
+                    <td>{{ ws.status }}</td>
+                    <td>{{ ws.ctime.ctime() }}</td>
+
+                    <td>{{ ws.id | ws_roles(ws.system_type) }}</td>
+                    <td class="td-manage">
+                        <a onclick="x_admin_show('编辑','{{ url_for('web.workspace_config', _id=ws.id) }}')"
+                           href="javascript:;" title="编辑">
+                            <i class="layui-icon">&#xe642;</i>
+                        </a>
+                        {% if ws.status == 'init' or ws.status == 'stop' %}
+                            <a title="开始"
+                               onclick="change_state('{{ url_for('api.workspace_config', _id=ws.id) }}', 'start')"
+                               href="javascript:;">
+                                <i class="layui-icon layui-icon-play"></i>
+                            </a>
+                        {% endif %}
+                        {% if ws.status == 'start' %}
+                            <a title="暂停"
+                               onclick="change_state('{{ url_for('api.workspace_config', _id=ws.id) }}', 'stop')"
+                               href="javascript:;">
+                                <i class="layui-icon layui-icon-pause"></i>
+                            </a>
+                            <a title="结束"
+                               onclick="change_state('{{ url_for('api.workspace_config', _id=ws.id) }}', 'finish')"
+                               href="javascript:;">
+                                <i class="layui-icon layui-icon-circle"></i>
+                            </a>
+                        {% endif %}
+                        <a title="清空"
+                           onclick="clear_traffic('{{ url_for('api.workspace_op', _id=ws.id) }}')"
+                           href="javascript:;">
+                            <i class="layui-icon layui-icon-fonts-clear"></i>
+                        </a>
+                        <a onclick="parent.x_admin_show('流量明细','{{ url_for('web.workspace_traffic', _id=ws.id) }}')"
+                           href="javascript:;" title="流量明细">
+                            <i class="layui-icon">&#xe63c;</i>
+                        </a>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        <div class="page">
+            <div>
+                {% if hit.per_page %}
+                    <span onclick="page_flush('{{ hit.per_page }}', '{{ size }}')" style="cursor:pointer"
+                          class="prev">&lt;&lt;</span>
+                {% endif %}
+
+                {% if hit.p_min %}
+                    <span onclick="page_flush('{{ hit.p_min }}', '{{ size }}')" style="cursor:pointer"
+                          class="num">{{ hit.p_min }}</span>
+                {% endif %}
+
+                {% if hit.per_ellipsis %}
+                    <span class="num" style="cursor: pointer"> ... </span>
+                {% endif %}
+
+                {% for p in hit.dic %}
+                    <span onclick="page_flush('{{ p }}', '{{ size }}')"
+                            {% if p == page %} class="current" {% else %} class="num" {% endif %}
+                          style="cursor: pointer">{{ p }}</span>
+                {% endfor %}
+
+                {% if hit.suf_ellipsis %}
+                    <span class="num" style="cursor: pointer"> ... </span>
+                {% endif %}
+
+                {% if hit.p_max %}
+                    <span onclick="page_flush('{{ hit.p_max }}', '{{ size }}')" style="cursor:pointer"
+                          class="num">{{ hit.p_max }}</span>
+                {% endif %}
+
+                {% if hit.next_page %}
+                    <span onclick="page_flush('{{ hit.next_page }}', '{{ size }}')" class="next"
+                          style="cursor:pointer">&gt;&gt;</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function page_flush(page, size) {
+            let url = $("#url").val() + "?page=" + page + "&size=" + size;
+            $("#p_form")[0].action = url;
+            $("#p_form").submit();
+        }
+
+        /* 更新状态 */
+        function change_state(url, state) {
+            $.ajax({
+                url: url,
+                type: "put",
+                data: JSON.stringify({
+                    'status': state
+                }),
+                success: function (msg) {
+                    if (msg.flag !== 'success') {
+                        layer.msg(msg.data, {icon: 2});
+                    } else {
+                        setTimeout(function () {
+                            location.reload();
+                        }, 200);
+                    }
+                }
+            });
+        }
+
+        /* 清空流量 */
+        function clear_traffic(url) {
+            $.ajax({
+                url: url,
+                type: "delete",
+                success: function (msg) {
+                    if (msg.flag !== 'success') {
+                        layer.msg(msg.data, {icon: 2});
+                    } else {
+                        layer.msg("刷新成功！");
+                    }
+                }
+            });
+        }
+    </script>
+{% endblock %}

@@ -1,0 +1,78 @@
+{% extends "layout.html" %}
+
+{% block head %}
+<!-- 让IE8/9支持媒体查询，从而兼容栅格 -->
+<!--[if lt IE 9]>
+<script src="{{ url_for('static', filename='lib/html5.min.js') }}"></script>
+<script src="{{ url_for('static', filename='lib/respond.min.js') }}"></script>
+<![endif]-->
+{% endblock %}
+
+{% block body %}
+<div class="x-body">
+    <form class="layui-form" id="workspace-form" action="{{ url_for('api.workspace') }}" method="post">
+        {% if id %}
+        <input type="hidden" id="_id" name="_id" value="{{ id }}">
+        {% endif %}
+        <div class="layui-form-item">
+            <label for="depart_name" class="layui-form-label">
+                <span class="x-red">*</span>部门
+            </label>
+            <div class="layui-input-inline">
+                <input type="text" id="depart_name" name="depart_name" required="" lay-verify="required"
+                       autocomplete="off" class="layui-input" value="{{ source.depart_name }}">
+            </div>
+            <div class="layui-form-mid layui-word-aux">
+                <span class="x-red">*</span>将要录入系统所属部门
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label for="system_name" class="layui-form-label">
+                <span class="x-red">*</span>系统名称
+            </label>
+            <div class="layui-input-inline">
+                <input type="text" id="system_name" name="system_name"
+                       autocomplete="off" class="layui-input" value="{{ source.system_name }}">
+            </div>
+            <div class="layui-form-mid layui-word-aux">
+                <span class="x-red">*</span>要录入的系统的名称
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label for="depart_name" class="layui-form-label">
+            </label>
+            <input class="layui-btn" lay-filter="add" value="确定" type="button" onclick="workspace_update()">
+        </div>
+    </form>
+</div>
+<script>
+        function workspace_update() {
+            let url = $("#workspace-form")[0].action;
+            if ($("#_id").length != 0) {
+                url = url + "/" + $("#_id").val();
+            }
+            $.ajax({
+                url: url,
+                type: "put",
+                data: JSON.stringify({
+                    depart_name: $("#depart_name").val(),
+                    system_name: $("#system_name").val()
+                }),
+                success: function (msg) {
+                    if (msg.flag != 'success') {
+                        layer.msg(msg.data, {icon: 2});
+                    } else {
+                        var index = parent.layer.getFrameIndex(window.name);
+
+                        //关闭当前frame
+                        setTimeout('parent.layer.close(index);', 500);
+                        setTimeout('x_admin_father_reload()', 300);
+                    }
+                }, error: function () {
+                    layer.msg('操作异常！', {icon: 2});
+                }
+            });
+        }
+</script>
+
+{% endblock %}

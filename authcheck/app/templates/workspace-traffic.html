@@ -1,0 +1,489 @@
+{% extends "layout.html" %}
+
+{% block body %}
+    <div class="x-body">
+        <div>
+            <form id="form" class="layui-form layui-col-md12 x-so" method="post">
+                <input type="hidden" name="ws_id" id="ws_id" value="{{ workspace_id }}">
+                <input type="hidden" id="ws_polling" value="{{ url_for('ws.polling') }}">
+                <input type="hidden" id="ws_listening" value="{{ url_for('ws.listening', ws_id=workspace_id) }}">
+                <input type="checkbox" name="al" id="al" title="全量" {% if al %}checked{% endif %}>
+                <input type="checkbox" name="suspect" id="suspect" title="可疑" {% if suspect %}checked{% endif %}>
+                <input type="text" id="banner" name="banner" placeholder="信息" autocomplete="off"
+                       class="layui-input" style="width: 20%;"
+                       value="{{ banner }}">
+                <input type="text" id="nor_banner" name="nor_banner" placeholder="！信息" autocomplete="off"
+                       class="layui-input" style="width: 20%;"
+                       value="{{ nor_banner }}">
+                <button onclick="" class="layui-btn" lay-submit="" lay-filter="sreach"><i
+                        class="layui-icon">&#xe615;</i></button>
+
+                <a id="cc" class="layui-btn layui-btn-small" style="line-height:1.6em;
+                margin-top:3px;float:right" onclick="listening()"
+                   title="监听">
+                    <i class="layui-icon layui-icon-refresh" style="line-height:30px"></i></a>
+
+                <a title="清空" class="layui-btn layui-btn-small" style="line-height: 1.6em;
+                margin-top:3px; float:right"
+                   onclick="clear_traffic('{{ url_for('api.workspace_op', _id=workspace_id) }}')"
+                   href="javascript:">
+                    <i class="layui-icon layui-icon-fonts-clear" style="line-height: 30px"></i>
+                </a>
+            </form>
+        </div>
+        <div id="all_data" class="layui-collapse" lay-filter="lay-traffic" lay-accordion="">
+            {% for packet_record in packet_records %}
+                <div class="banner-text">
+                    {{ packet_record.username }} - {{ packet_record.ctime.ctime() }}
+                    <i onclick="repact('{{ packet_record.id }}')" class="layui-icon layui-icon-refresh"
+                       style="line-height:12px; margin-right: 8px; float: right; cursor: pointer;" title="重放"></i>
+                    <i onclick="shadow_this(this)" class="layui-icon layui-icon-chart"
+                       style="line-height:12px; margin-right: 8px; float: right; cursor: pointer;" title="屏蔽"></i>
+
+                    {% set raw_packet = packet_record.raw_packet %}
+
+                    {% if raw_packet %}
+                        <div class="layui-colla-item">
+                            <h2 class="layui-colla-title" pid="{{ raw_packet.id }}"
+                                oncontextmenu="return compare(this);">
+                                {{ raw_packet.banner }}
+                            </h2>
+                            <div class="layui-colla-content">
+                                <div class="layui-tab">
+                                    <ul class="layui-tab-title">
+                                        <li class="layui-this">REQUEST</li>
+                                        <li>RESPONSE</li>
+                                        <li>认证信息</li>
+                                    </ul>
+                                    <div class="layui-tab-content">
+                                        <div class="layui-tab-item layui-show">
+                                          <pre class="layui-code code-request">
+                                          </pre>
+                                        </div>
+                                        <div class="layui-tab-item">
+                                      <pre class="layui-code code-response">
+                                      </pre>
+                                        </div>
+                                        <div class="layui-tab-item">
+                                      <pre class="layui-code">
+{{ raw_packet.role_describe }}
+                                      </pre>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                    {% for per in packet_record.per_packets %}
+                        <div class="layui-colla-item">
+                            <h2 class="layui-colla-title" pid="{{ per.id }}"
+                                oncontextmenu="return compare(this);">{{ per.banner }}</h2>
+                            <div class="layui-colla-content">
+                                <div class="layui-tab">
+                                    <ul class="layui-tab-title">
+                                        <li class="layui-this">REQUEST</li>
+                                        <li>RESPONSE</li>
+                                        <li>认证信息</li>
+                                    </ul>
+                                    <div class="layui-tab-content">
+                                        <div class="layui-tab-item layui-show">
+                                      <pre class="layui-code code-request">
+                                      </pre>
+                                        </div>
+                                        <div class="layui-tab-item">
+                                      <pre class="layui-code code-response">
+                                      </pre>
+                                        </div>
+                                        <div class="layui-tab-item">
+                                      <pre class="layui-code">
+{{ per.role_describe }}
+                                      </pre>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                    <hr class="layui-bg-gray">
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <script>
+        layui.use(['code', 'form'], function () {
+            layui.code();
+        });
+
+        layui.use('element', function () {
+            layui.element.on('collapse(lay-traffic)', function (data) {
+                if (data.show) { // 展开状态
+                    if (!data.title.hasClass("rendering")) { // 获取数据
+                        let pr_id = $(data.title).attr('pid').toString().trim();
+                        if (pr_id.length === 0) {
+                            data.title.addClass("rendering");  // 没有数据包
+                            return;
+                        }
+                        let url = "/api/packetdata/" + pr_id;
+
+                        let req = data.content.find(".code-request");
+                        let resp = data.content.find(".code-response");
+
+                        $.get(url, function (msg) {
+                            if (msg.flag !== 'success') {
+                                layer.msg(msg.data, {icon: 2});
+                            } else {
+                                req.text(msg.data.req);
+                                resp.text(msg.data.resp);
+
+                                layui.use('code', function () {
+                                    layui.code({
+                                        elem: req
+                                    });
+                                    layui.code({
+                                        elem: resp
+                                    });
+                                });
+                                data.title.addClass("rendering");
+                            }
+                        });
+                    }
+                }
+            });
+        });
+
+        /* 添加颜色，根据banner中的长度 */
+        function render_banner(pr) {
+            let banners = $(pr).find('.layui-colla-title');
+            if (banners.length < 2) {
+                return;
+            }
+
+            let first_banner = banners[0].innerText;
+            let first_left = first_banner.indexOf('(');
+            let first_right = first_banner.indexOf(')');
+            let first_length = first_banner.substr(first_left + 1, first_right - first_left - 1);
+            for (let i = 1; i < banners.length; ++i) {
+                let back_banner = banners[i].innerText;
+                let back_left = back_banner.indexOf('(');
+                let back_right = back_banner.indexOf(')');
+                let back_length = back_banner.substr(back_left + 1, back_right - back_left - 1);
+
+                if (Math.abs((first_length - back_length)) < 1) {  // 响应包长度相同，高亮一下
+                    $(banners[0]).css('background-color', 'powderblue');
+                    $(banners[i]).css('background-color', 'powderblue');
+                }
+            }
+        }
+
+        /* 添加颜色 */
+        function render_traffic() {
+            $("#all_data").find('.banner-text').each(function (i, pr) {
+                render_banner(pr);
+            });
+        }
+
+        function v_xss(raw_data, inline = false) {
+            if (inline) {
+                raw_data = raw_data.replace(/\n/g, ' ');
+            }
+            let d = document.createElement("span");
+            d.innerText = raw_data;
+            return d.innerHTML;
+        }
+
+        function append_row(source) {
+            if (!source || (!source.raw_packet && !source.per_packets)) {
+                return;
+            }
+            let raw_packet = "";
+            if (source.raw_packet) {
+                raw_packet = "  <div class=\"layui-colla-item\">\n" +
+                    "      <h2 class=\"layui-colla-title\"  pid=\"" +
+                    source.raw_packet._id.$oid +
+                    "\" oncontextmenu=\"return compare(this);\">" + v_xss(source.raw_packet.banner, true) + "</h2>\n" +
+                    "      <div class=\"layui-colla-content\">\n" +
+                    "          <div class=\"layui-tab\">\n" +
+                    "              <ul class=\"layui-tab-title\">\n" +
+                    "                  <li class=\"layui-this\">REQUEST</li>\n" +
+                    "                  <li>RESPONSE</li>\n" +
+                    "                  <li>认证信息</li>\n" +
+                    "              </ul>\n" +
+                    "              <div class=\"layui-tab-content\">\n" +
+                    "                  <div class=\"layui-tab-item layui-show\">\n" +
+                    "                        <pre class=\"layui-code code-request\" pid='" +
+                    source.raw_packet.req_id +
+                    "'>\n" +
+                    "                        </pre>\n" +
+                    "                  </div>\n" +
+                    "                  <div class=\"layui-tab-item\">\n" +
+                    "                    <pre class=\"layui-code code-response\" pid='" +
+                    source.raw_packet.resp_id +
+                    "'>\n" +
+                    "                    </pre>\n" +
+                    "                  </div>\n" +
+                    "                  <div class=\"layui-tab-item\">\n" +
+                    "                    <pre class=\"layui-code\">\n" +
+                    "空" +
+                    "                    </pre>\n" +
+                    "                  </div>\n" +
+                    "              </div>\n" +
+                    "          </div>\n" +
+                    "      </div>\n" +
+                    "  </div>";
+            }
+
+            let per_packets = [];
+            if (source.per_packets) {
+                source.per_packets.forEach(function (p) {
+                    per_packets.push("      <div class=\"layui-colla-item\">\n" +
+                        "          <h2 class=\"layui-colla-title\"  pid=\"" +
+                        p._id.$oid +
+                        "\" oncontextmenu=\"return compare(this);\"> " + v_xss(p.banner, true) + "</h2>\n" +
+                        "          <div class=\"layui-colla-content\">\n" +
+                        "              <div class=\"layui-tab\">\n" +
+                        "                  <ul class=\"layui-tab-title\">\n" +
+                        "                      <li class=\"layui-this\">REQUEST</li>\n" +
+                        "                      <li>RESPONSE</li>\n" +
+                        "                      <li>认证信息</li>\n" +
+                        "                  </ul>\n" +
+                        "                  <div class=\"layui-tab-content\">\n" +
+                        "                      <div class=\"layui-tab-item layui-show\">\n" +
+                        "                        <pre class=\"layui-code code-request\" pid='" +
+                        p.req_id +
+                        "'>\n" +
+                        "                        </pre>\n" +
+                        "                      </div>\n" +
+                        "                      <div class=\"layui-tab-item\">\n" +
+                        "                        <pre class=\"layui-code code-response\" pid='" +
+                        p.resp_id +
+                        "'>\n" +
+                        "                        </pre>\n" +
+                        "                      </div>\n" +
+                        "                      <div class=\"layui-tab-item\">\n" +
+                        "                        <pre class=\"layui-code\">\n" +
+                        v_xss(p.role_describe) +
+                        "                        </pre>\n" +
+                        "                      </div>\n" +
+                        "                  </div>\n" +
+                        "              </div>\n" +
+                        "          </div>\n" +
+                        "      </div>");
+                });
+            }
+
+            let gray = '<hr class="layui-bg-gray">';
+            let banner_text = '<div class="banner-text">' + v_xss(source.username) + ' - ' +
+                v_xss(Date(source.ctime.$date));
+
+            let r = '<i onclick="repact(\'' + source._id.$oid + '\')" class="layui-icon layui-icon-refresh"\n' +
+                'style="line-height:12px; margin-right: 8px; float: right; cursor: pointer;" title="重放"></i>';
+            let s = '<i onclick="shadow_this(this)" class="layui-icon layui-icon-chart"\n' +
+                'style="line-height:12px; margin-right: 8px; float: right; cursor: pointer;" title="屏蔽"></i>';
+
+            let pr = $(banner_text + r + s + raw_packet + per_packets.join('') + gray);
+            render_banner(pr);
+            $("#all_data").prepend(pr);
+            layui.element.render();
+        }
+
+        WsListening = {};
+        WsListening.refresh_switch = false;  // 监听开关
+
+        function polling(uid) {
+            if (!WsListening.refresh_switch || WsListening.top !== uid) {
+                return;
+            }
+            $.post($("#ws_polling").val(), JSON.stringify({
+                'uid': uid
+            }), function (data) {
+                if (data.flag && data.data) {
+                    append_row(data.data);
+                }
+                setTimeout(polling, 800, uid);
+            });
+        }
+
+        function listening() {
+            WsListening.refresh_switch = !WsListening.refresh_switch;
+            if (WsListening.refresh_switch) {  // 关闭状态 -> 监听状态
+                $("#cc i").removeClass("layui-icon-refresh");
+                $("#cc i").addClass("layui-icon-loading");
+                $.post($("#ws_listening").val(), JSON.stringify({
+                    "banner": $("#banner").val(),
+                    "nor_banner": $("#nor_banner").val(),
+                    'suspect': $("#suspect")[0].checked ? $("#suspect").val() : ""
+                }), function (data) {
+                    if (data.flag) {
+                        WsListening.top = data.data;
+                        polling(data.data);
+
+                        $("#all_data").prepend('<hr class="layui-bg-gray">');
+                        $("#all_data").prepend('<div>....</div>');
+                        $("#all_data").prepend('<div>.....</div>');
+                        $("#all_data").prepend('<div>......</div>');
+                        $("#all_data").prepend('<hr class="layui-bg-gray">');
+                    } else {
+                        WsListening.refresh_switch = false;
+                        $("#cc i").removeClass("layui-icon-loading");
+                        $("#cc i").addClass("layui-icon-refresh");
+                    }
+                });
+            } else {  // 监听 -> 关闭
+                $("#cc i").removeClass("layui-icon-loading");
+                $("#cc i").addClass("layui-icon-refresh");
+            }
+        };
+
+        function get_from_pid(doc) {
+            return $(doc).attr('pid').toString();
+        }
+
+        function show_compare(l_data, r_data) {
+            let c = '    <div style="padding: 20px; background-color: #F2F2F2;">' +
+                '      <div class="layui-row layui-col-space15">' +
+                '        <div class="layui-col-md6">' +
+                '          <div class="layui-card">' +
+                '            <div class="layui-card-header" style="white-space:nowrap; text-overflow:ellipsis; ' +
+                'overflow:hidden;">' +
+                v_xss(l_data.banner, true) +
+                '</div>' +
+                '            <div class="layui-card-body">' +
+                "              <div class=\"layui-tab\">\n" +
+                "                  <ul class=\"layui-tab-title\">\n" +
+                "                      <li class=\"layui-this\">REQUEST</li>\n" +
+                "                      <li>RESPONSE</li>\n" +
+                "                  </ul>\n" +
+                "                  <div class=\"layui-tab-content\">\n" +
+                "                      <div class=\"layui-tab-item layui-show\">\n" +
+                "                        <pre class=\"layui-code code-request\">\n" +
+                v_xss(l_data.req) +
+                "                        </pre>\n" +
+                "                      </div>\n" +
+                "                      <div class=\"layui-tab-item\">\n" +
+                "                        <pre class=\"layui-code code-response\">\n" +
+                v_xss(l_data.resp) +
+                "                        </pre>\n" +
+                "                      </div>\n" +
+                "                  </div>\n" +
+                "              </div>\n" +
+                '            </div>' +
+                '          </div>' +
+                '        </div>' +
+                '        <div class="layui-col-md6">' +
+                '          <div class="layui-card">' +
+                '            <div class="layui-card-header" style="white-space:nowrap; text-overflow:ellipsis; ' +
+                'overflow:hidden;">' +
+                v_xss(r_data.banner, true) +
+                '</div>' +
+                '            <div class="layui-card-body">' +
+                "              <div class=\"layui-tab\">\n" +
+                "                  <ul class=\"layui-tab-title\">\n" +
+                "                      <li class=\"layui-this\">REQUEST</li>\n" +
+                "                      <li>RESPONSE</li>\n" +
+                "                  </ul>\n" +
+                "                  <div class=\"layui-tab-content\">\n" +
+                "                      <div class=\"layui-tab-item layui-show\">\n" +
+                "                        <pre class=\"layui-code code-request\">\n" +
+                v_xss(r_data.req) +
+                "                        </pre>\n" +
+                "                      </div>\n" +
+                "                      <div class=\"layui-tab-item\">\n" +
+                "                        <pre class=\"layui-code code-response\">\n" +
+                v_xss(r_data.resp) +
+                "                        </pre>\n" +
+                "                      </div>\n" +
+                "                  </div>\n" +
+                "              </div>\n" +
+                '            </div>' +
+                '          </div>' +
+                '        </div>' +
+                '      </div>' +
+                '    </div>';
+            parent.parent.layer.open({
+                type: 0,
+                title: '数据包对比'
+                , content: c,
+                shadeClose: true,
+                area: ["80%", "80%"]
+            });
+        }
+
+        function repact(pr_id) {
+            $.get('/api/replay/' + pr_id, function (msg) {
+                if (msg.flag !== 'success') {
+                    layer.msg(msg.data);
+                }
+            });
+        }
+
+        function compare(self) {
+            if (window.v_left !== undefined) {
+                if (self !== window.v_left) {  // 不同，需要对比一下
+                    $(window.v_left).css({'background': window.v_left_color});  // 颜色还原
+                    let l_pid = get_from_pid(window.v_left);
+                    let r_pid = get_from_pid(self);
+                    let l_url = "/api/packetdata/" + l_pid;
+                    let r_url = "/api/packetdata/" + r_pid;
+
+                    $.get(l_url, function (msg) {  // 左边的数据包信息
+                        if (msg.flag !== 'success') {  // 请求失败
+                            layer.msg(msg.content);
+                        } else {
+                            let l_data = msg.data;  // 请求成功
+                            $.get(r_url, function (msg) {  // 右边的数据包信息
+                                if (msg.flag !== 'success') {  // 请求失败
+                                    layer.msg(msg.content);
+                                } else {
+                                    let r_data = msg.data; // 请求成功
+                                    show_compare(l_data, r_data);
+                                }
+                            });
+                        }
+                    });
+                }
+
+                $(self).css({'background': window.v_left_color});
+                window.v_left = undefined;
+            } else {
+                window.v_left = self;
+                window.v_left_color = $(self).css('background-color');  // 便于还原
+                $(self).css('background-color', 'beige');
+            }
+            return false;
+        }
+
+        $(function () {
+            render_traffic();
+        });
+
+        /* 屏蔽url */
+        function shadow_this(self) {
+            let text = $(self).next().find('.layui-colla-title').text();
+            let matches = text.match(/(http[s]?:\/\/.*?)[\s?#]/);
+            if (matches.length > 1) {
+                let match = matches[1];
+                let msg = $("#nor_banner").val();
+                if (!msg.includes(match)) {
+                    msg = $("#nor_banner").val() + "|" + match;
+                }
+                $("#nor_banner").val(msg);
+            }
+        }
+
+        /* 清空流量 */
+        function clear_traffic(url) {
+            $.ajax({
+                url: url,
+                type: "delete",
+                success: function (msg) {
+                    if (msg.flag !== 'success') {
+                        layer.msg(msg.data, {icon: 2});
+                    } else {
+                        $("#form").submit();
+                    }
+                }
+            });
+        }
+    </script>
+{% endblock %}

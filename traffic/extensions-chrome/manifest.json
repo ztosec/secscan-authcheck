@@ -1,0 +1,37 @@
+{
+  "name": "authcheck",
+  "version": "1.0",
+  "description": "越权检测工具",
+  "permissions": [
+    "storage",
+    "declarativeContent",
+    "webRequest",
+    "webRequestBlocking",
+    "*://*/*"
+  ],
+  "background": {
+    "scripts": [
+      "js/jquery-3.4.1.min.js",
+      "js/jquery.base64.js",
+      "js/background.js"
+    ],
+    "persistent": true
+  },
+  "browser_action": {
+    "default_popup": "popup.html",
+    "default_icon": "images/ac.png"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "*://*/*"
+      ],
+      "js": [
+        "js/jquery-3.4.1.min.js",
+        "js/identify.js"
+      ],
+      "run_at": "document_start"
+    }
+  ],
+  "manifest_version": 2
+}

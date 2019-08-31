@@ -1,0 +1,92 @@
+{% extends "layout.html" %}
+{% block body %}
+    <!-- 顶部开始 -->
+    <div class="container">
+        <div class="logo"><a href="{{ url_for('web.home') }}">AuthCheck v0.1</a></div>
+        <div class="left_open">
+            <i title="展开左侧栏" class="iconfont">&#xe699;</i>
+        </div>
+        <ul class="layui-nav right" lay-filter="">
+          <li class="layui-nav-item">
+            <a href="javascript:;">{{ session['username'] }}</a>
+            <dl class="layui-nav-child"> <!-- 二级菜单 -->
+              <dd><a href="{{ url_for('web.logout') }}">退出</a></dd>
+            </dl>
+          </li>
+          <li class="layui-nav-item to-index"><a href="{{ url_for('web.home') }}">首页</a></li>
+        </ul>
+        
+    </div>
+    <!-- 顶部结束 -->
+    <!-- 中部开始 -->
+     <!-- 左侧菜单开始 -->
+    <div class="left-nav">
+      <div id="side-nav">
+        <ul id="nav">
+            {% if is_manager() %}
+            <li>
+                <a href="javascript:;">
+                    <i class="iconfont">&#xe726;</i>
+                    <cite>管理</cite>
+                    <i class="iconfont nav_right">&#xe697;</i>
+                </a>
+                <ul class="sub-menu">
+                    <li>
+                        <a _href="{{ url_for('web.sso_account') }}">
+                            <i class="iconfont">&#xe6a7;</i>
+                            <cite>账号管理</cite>
+                        </a>
+                    </li >
+                </ul>
+            </li>
+            {% endif %}
+            <li>
+                <a href="javascript:;">
+                    <i class="layui-icon layui-icon-spread-left"></i>
+                    <cite>流量</cite>
+                    <i class="iconfont nav_right">&#xe697;</i>
+                </a>
+                <ul class="sub-menu">
+                    <li>
+                        <a _href="{{ url_for('web.workspace') }}">
+                            <i class="iconfont">&#xe6a7;</i>
+                            <cite>工作空间</cite>
+                        </a>
+                    </li >
+                </ul>
+            </li>
+        </ul>
+      </div>
+    </div>
+    <!-- <div class="x-slide_left"></div> -->
+    <!-- 左侧菜单结束 -->
+    <!-- 右侧主体开始 -->
+    <div class="page-content">
+        <div class="layui-tab tab" lay-filter="xbs_tab" lay-allowclose="false">
+          <ul class="layui-tab-title">
+            <li class="home"><i class="layui-icon">&#xe68e;</i>我的桌面</li>
+          </ul>
+          <div class="layui-unselect layui-form-select layui-form-selected" id="tab_right">
+                <dl>
+                    <dd data-type="this">关闭当前</dd>
+                    <dd data-type="other">关闭其它</dd>
+                    <dd data-type="all">关闭全部</dd>
+                </dl>
+          </div>
+          <div class="layui-tab-content">
+            <div class="layui-tab-item layui-show">
+                <iframe src="{{ url_for('web.welcome') }}" frameborder="0" scrolling="yes" class="x-iframe"></iframe>
+            </div>
+          </div>
+          <div id="tab_show"></div>
+        </div>
+    </div>
+    <div class="page-content-bg"></div>
+    <!-- 右侧主体结束 -->
+    <!-- 中部结束 -->
+    <!-- 底部开始 -->
+    <div class="footer">
+        <div class="copyright">Copyright ©中通 信息安全部</div>
+    </div>
+    <!-- 底部结束 -->
+{% endblock %}

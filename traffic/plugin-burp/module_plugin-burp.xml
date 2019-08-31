@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="module_plugin-burp" default="compile.module.plugin-burp">
+  <dirname property="module.plugin-burp.basedir" file="${ant.file.module_plugin-burp}"/>
+  
+  <property name="module.jdk.home.plugin-burp" value="${jdk.home.1.8}"/>
+  <property name="module.jdk.bin.plugin-burp" value="${jdk.bin.1.8}"/>
+  <property name="module.jdk.classpath.plugin-burp" value="jdk.classpath.1.8"/>
+  
+  <property name="compiler.args.plugin-burp" value="-encoding UTF-8 -source 8 -target 8 ${compiler.args}"/>
+  
+  <property name="plugin-burp.output.dir" value="${module.plugin-burp.basedir}/target/classes"/>
+  <property name="plugin-burp.testoutput.dir" value="${module.plugin-burp.basedir}/target/test-classes"/>
+  
+  <path id="plugin-burp.module.bootclasspath">
+    <!-- Paths to be included in compilation bootclasspath -->
+  </path>
+  
+  <path id="plugin-burp.module.production.classpath">
+    <path refid="${module.jdk.classpath.plugin-burp}"/>
+    <path refid="library.maven:_com.alibaba:fastjson:1.2.59.classpath"/>
+  </path>
+  
+  <path id="plugin-burp.runtime.production.module.classpath">
+    <pathelement location="${plugin-burp.output.dir}"/>
+    <path refid="library.maven:_com.alibaba:fastjson:1.2.59.classpath"/>
+  </path>
+  
+  <path id="plugin-burp.module.classpath">
+    <path refid="${module.jdk.classpath.plugin-burp}"/>
+    <pathelement location="${plugin-burp.output.dir}"/>
+    <path refid="library.maven:_com.alibaba:fastjson:1.2.59.classpath"/>
+    <path refid="library.maven:_junit:junit:4.11.classpath"/>
+    <path refid="library.maven:_org.hamcrest:hamcrest-core:1.3.classpath"/>
+  </path>
+  
+  <path id="plugin-burp.runtime.module.classpath">
+    <pathelement location="${plugin-burp.testoutput.dir}"/>
+    <pathelement location="${plugin-burp.output.dir}"/>
+    <path refid="library.maven:_com.alibaba:fastjson:1.2.59.classpath"/>
+    <path refid="library.maven:_junit:junit:4.11.classpath"/>
+    <path refid="library.maven:_org.hamcrest:hamcrest-core:1.3.classpath"/>
+  </path>
+  
+  
+  <patternset id="excluded.from.module.plugin-burp">
+    <patternset refid="ignored.files"/>
+  </patternset>
+  
+  <patternset id="excluded.from.compilation.plugin-burp">
+    <patternset refid="excluded.from.module.plugin-burp"/>
+  </patternset>
+  
+  <path id="plugin-burp.module.sourcepath">
+    <dirset dir="${module.plugin-burp.basedir}">
+      <include name="src/main/java"/>
+    </dirset>
+  </path>
+  
+  <path id="plugin-burp.module.test.sourcepath">
+    <dirset dir="${module.plugin-burp.basedir}">
+      <include name="src/test/java"/>
+    </dirset>
+  </path>
+  
+  
+  <target name="compile.module.plugin-burp" depends="compile.module.plugin-burp.production,compile.module.plugin-burp.tests" description="Compile module plugin-burp"/>
+  
+  <target name="compile.module.plugin-burp.production" depends="register.custom.compilers" description="Compile module plugin-burp; production classes">
+    <mkdir dir="${plugin-burp.output.dir}"/>
+    <javac2 destdir="${plugin-burp.output.dir}" debug="${compiler.debug}" nowarn="${compiler.generate.no.warnings}" memorymaximumsize="${compiler.max.memory}" fork="true" executable="${module.jdk.bin.plugin-burp}/javac">
+      <compilerarg line="${compiler.args.plugin-burp}"/>
+      <bootclasspath refid="plugin-burp.module.bootclasspath"/>
+      <classpath refid="plugin-burp.module.production.classpath"/>
+      <src refid="plugin-burp.module.sourcepath"/>
+      <patternset refid="excluded.from.compilation.plugin-burp"/>
+    </javac2>
+    
+    <copy todir="${plugin-burp.output.dir}">
+      <fileset dir="${module.plugin-burp.basedir}/src/main/java">
+        <patternset refid="compiler.resources"/>
+        <type type="file"/>
+      </fileset>
+    </copy>
+  </target>
+  
+  <target name="compile.module.plugin-burp.tests" depends="register.custom.compilers,compile.module.plugin-burp.production" description="compile module plugin-burp; test classes" unless="skip.tests">
+    <mkdir dir="${plugin-burp.testoutput.dir}"/>
+    <javac2 destdir="${plugin-burp.testoutput.dir}" debug="${compiler.debug}" nowarn="${compiler.generate.no.warnings}" memorymaximumsize="${compiler.max.memory}" fork="true" executable="${module.jdk.bin.plugin-burp}/javac">
+      <compilerarg line="${compiler.args.plugin-burp}"/>
+      <bootclasspath refid="plugin-burp.module.bootclasspath"/>
+      <classpath refid="plugin-burp.module.classpath"/>
+      <src refid="plugin-burp.module.test.sourcepath"/>
+      <patternset refid="excluded.from.compilation.plugin-burp"/>
+    </javac2>
+    
+    <copy todir="${plugin-burp.testoutput.dir}">
+      <fileset dir="${module.plugin-burp.basedir}/src/test/java">
+        <patternset refid="compiler.resources"/>
+        <type type="file"/>
+      </fileset>
+    </copy>
+  </target>
+  
+  <target name="clean.module.plugin-burp" description="cleanup module">
+    <delete dir="${plugin-burp.output.dir}"/>
+    <delete dir="${plugin-burp.testoutput.dir}"/>
+  </target>
+</project>

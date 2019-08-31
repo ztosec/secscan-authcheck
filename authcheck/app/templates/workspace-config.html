@@ -1,0 +1,481 @@
+{% extends "layout.html" %}
+
+{% block head %}
+    <!-- 让IE8/9支持媒体查询，从而兼容栅格 -->
+    <!--[if lt IE 9]>
+<script src="{{ url_for('static', filename='lib/html5.min.js') }}"></script>
+<script src="{{ url_for('static', filename='lib/respond.min.js') }}"></script>
+<![endif]-->
+{% endblock %}
+
+{% block body %}
+    <form class="layui-form" lay-filter="conf-form" id="conf_form"
+          action="{{ url_for('api.workspace_config', _id=ws_id) }}">
+        <input type="hidden" id="ws_id" value="{{ ws_id }}">
+        <div class="x-body">
+            <div class="layui-form-item">
+                <label class="layui-form-label">hosts</label>
+                <div class="layui-input-inline">
+                    <input id="ws_hosts" type="text" required placeholder="192.168.1.1,127.0.0.1:8888,..."
+                           style="border:none; width: 200%; border-bottom: solid thin;"
+                           class="layui-input">
+                </div>
+                <button type="button" class="layui-btn layui-btn-lg"
+                        onclick="save()"
+                        style="float: right; margin-right: 30px;">
+                    保存
+                </button>
+            </div>
+
+            <div class="layui-tab layui-tab-brief" lay-filter="auth-tab">
+                <ul class="layui-tab-title">
+                    <li lay-id="sso" class="layui-this">sso认证</li>
+                    <li lay-id="auth">手动录入</li>
+                </ul>
+                <div class="layui-tab-content">
+                    <!-- sso认证 -->
+                    <div class="layui-tab-item layui-show">
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">入口url</label>
+                            <div class="layui-input-inline">
+                                <input type="text" id="site" name="site" placeholder="输入站点首页url" class="layui-input">
+                            </div>
+                            <button type="button" class="layui-btn layui-btn-primary" onclick="site_watch()">解析</button>
+                        </div>
+
+                        <div class="layui-card">
+                            <div class="layui-card-header">账号</div>
+                            <div class="layui-card-body">
+                                {% for account in func_account() %}
+                                    {% if account.status == 'valid' %}
+                                        <div class="layui-row">
+                                            <div class="layui-col-md1">
+                                                <input type="checkbox" value="{{ account.id }}"
+                                                       name="account" lay-skin="primary"
+                                                       title="{{ account.describe }}">
+                                            </div>
+                                            <div class="layui-col-md1">
+                                                {{ account.username }}
+                                            </div>
+                                            <div class="layui-col-md4">
+                                                <input type="text" name="describe" class="layui-input"
+                                                       value="{{ account.describe }}">
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <hr class="layui-bg-red">
+                        <!-- 下面这些一般不需要干预 -->
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">portal_site</label>
+                            <div class="layui-input-block">
+                                <input type="text" name="portal_site" placeholder="站点首页"
+                                       autocomplete="off" class="layui-input">
+                            </div>
+                        </div>
+
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">redirect_url</label>
+                            <div class="layui-input-block">
+                                <input type="text" name="redirect_url" required lay-verify="required"
+                                       placeholder="sso重定向url"
+                                       autocomplete="off" class="layui-input">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 手动认证 -->
+                    <div class="layui-tab-item">
+                        <div class="layui-collapse" lay-accordion id="auth_panel">
+                            <div class="layui-colla-item auth-collapse">
+                                <h2 class="layui-colla-title">
+                                    <span class="banner-text" style="color: black;"></span>
+                                    <i onclick="banner_remove(this)" class="layui-icon"
+                                       style="float: right;">&#xe640;</i>
+                                </h2>
+                                <div class="layui-colla-content">
+                                    <div class="layui-form-item">
+                                        <label class="layui-form-label">角色描述</label>
+                                        <div class="layui-input-block">
+                                            <input type="text" required placeholder="描述一下这个角色" autocomplete="off"
+                                                   name="role_describe"
+                                                   class="layui-input" onchange="role_describe_banner(this)">
+                                        </div>
+                                    </div>
+
+                                    <div class="layui-form-item">
+                                        <label class="layui-form-label">url-pattern(正则)</label>
+                                        <div class="layui-input-inline">
+                                            <input type="text" required placeholder="url正则匹配" autocomplete="off"
+                                                   name="url_pattern"
+                                                   class="layui-input" value=".*">
+                                        </div>
+                                        <div class="layui-btn-container">
+                                            <button type="button" class="layui-btn layui-btn-primary layui-btn-xs"
+                                                    onclick="insert_kv(this, 'header')">HEADERS
+                                            </button>
+                                            <button type="button" class="layui-btn layui-btn-primary layui-btn-xs"
+                                                    onclick="insert_kv(this, 'get')">URL PARAMS
+                                            </button>
+                                            <button type="button" class="layui-btn layui-btn-primary layui-btn-xs"
+                                                    onclick="insert_kv(this, 'post')">POST PARAMS
+                                            </button>
+                                        </div>
+                                    </div>
+
+
+                                    <div class="layui-form-item kv-item" mode="header">
+                                        <div class="layui-input-inline">
+                                            <input type="text" placeholder="Headers Key"
+                                                   style="border:none;border-bottom: solid thin;"
+                                                   name="header_key" autocomplete="off" class="layui-input"
+                                                   onfocus="kv_focus(this)">
+                                        </div>
+                                        <div class="layui-input-inline">
+                                            <input type="text" placeholder="Value" name="header_value"
+                                                   style="border:none;border-bottom: solid thin;"
+                                                   autocomplete="off" class="layui-input"
+                                                   onfocus="kv_focus(this)">
+                                        </div>
+                                        <button type="button" class="layui-btn layui-btn-primary"
+                                                onclick="delete_kv(this)">
+                                            <i class="layui-icon">&#xe640;</i>
+                                        </button>
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" title="添加角色" class="layui-btn layui-btn-primary layui-btn-lg"
+                                style="margin-top: 20px; margin-right: 20px; float: right;"
+                                onclick="insert_collapse()">
+                            <i class="layui-icon">&#xe654;</i>
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </form>
+
+    <script>
+        $(function () {
+            window.reg_get1 = new RegExp("get", "g");
+            window.reg_get2 = new RegExp("URL Parameter Key", "g");
+            window.reg_post1 = new RegExp("post", "g");
+            window.reg_post2 = new RegExp("POST Parameter Key", "g");
+            window.reg_header1 = new RegExp("header", "g");
+            window.reg_header2 = new RegExp("Headers Key", "g");
+            window.dict = {
+                "header": "Headers Key",
+                "get": "URL Parameter Key",
+                "post": "POST Parameter Key"
+            };
+
+            window.auth_collapse = $(".auth-collapse")[0].outerHTML;
+            window.kv_item = $(".kv-item")[0].outerHTML;
+        });
+
+        function v_xss(raw_data) {
+            let d = document.createElement("span");
+            d.innerText = raw_data;
+            return d.innerHTML;
+        }
+
+        function role_describe_banner(self) {
+            let title = $($(self).parents()[3]).find(".layui-colla-title")[0];
+            let banner_text = $($(title).find(".banner-text")[0]);
+            banner_text.text(self.value);
+        }
+
+        function kv_focus(self) {
+            if ($($(self).parents()[1]).next().length === 0) {  // 下面没有，需要再新建一个
+                $($(self).parents()[2]).append($($(self).parents()[1].outerHTML));
+            }
+        }
+
+        function delete_kv(self) {
+            $($(self).parents()[0]).remove();
+        }
+
+        function insert_kv(self, mode) {
+            // mode -> [get, post, header]
+            let all = $($(self).parents()[1]).nextAll();
+
+            if (all.length === 0) {
+                let output = window.kv_item;
+                output = output.replace(reg_header1, mode);
+                output = output.replace(reg_header2, dict[mode]);
+                $($(self).parents()[2]).append(output);
+            } else {
+                let last = all[all.length - 1];
+                let output = last.outerHTML;
+                let _mode = $(last).attr("mode");
+                if (_mode === mode) { // 如果最后一个就是对应的mode，则不操作
+                    return;
+                }
+                if (_mode === 'get') {
+                    output = output.replace(reg_get1, mode);
+                    output = output.replace(reg_get2, dict[mode])
+                } else if (_mode === 'post') {
+                    output = output.replace(reg_post1, mode);
+                    output = output.replace(reg_post2, dict[mode])
+                } else if (_mode === 'header') {
+                    output = output.replace(reg_header1, mode);
+                    output = output.replace(reg_header2, dict[mode])
+                }
+                $($(last).parent()).append(output);
+            }
+        }
+
+        function insert_collapse() {
+            $("#auth_panel").append($(auth_collapse));
+            layui.element.render();
+        }
+
+        layui.use(['element', 'form'], function () {
+            let element = layui.element;
+            let form = layui.form;
+
+            let ws_id = $("#ws_id").val();
+            let url = location.protocol + "//" + document.domain + ":" + location.port +
+                "/api/workspace/" + ws_id + "/config";
+            $.get(url, function (msg) {
+                let data = msg.data;
+
+                if (data.system_type === 'direct') {
+                    element.tabChange('auth-tab', 'auth');
+                } else {
+                    element.tabChange('auth-tab', 'sso');
+                }
+
+                $("#ws_hosts").val(data.hosts.join(','));
+                if (data.system_type === 'direct') {  // 手动输入认证信息初始化
+                    if (data.roles && data.roles.auth_info) {
+                        $.each(data.roles.auth_info.reverse(), function (i, item) {
+                            let t = $(auth_collapse);
+                            $("#auth_panel").prepend(t);
+
+                            t.find("input[name='role_describe']")[0].value = item.describe;
+                            t.find("input[name='url_pattern']")[0].value = item.url_pattern;
+                            role_describe_banner(t.find("input[name='role_describe']")[0]);
+
+                            let raw_div = t.find("div[mode='header']")[0].outerHTML;
+                            let last_div = undefined;
+                            $.each(item.auth_args, function (k, v) {
+                                let div = raw_div.replace(reg_header1, 'get');
+                                last_div = $(div.replace(reg_header2, dict['get']));
+
+                                last_div.find("input[name='get_key']")[0].value = k;
+                                last_div.find("input[name='get_value']")[0].value = v;
+
+                                let l = t.find(".layui-form-item");
+                                $(l[l.length - 1]).after(last_div);
+
+                            });
+                            if (last_div) {
+                                kv_focus(last_div.find("input[name='get_key']")[0]);
+                            }
+
+                            last_div = undefined;
+                            $.each(item.auth_param, function (k, v) {
+                                let div = raw_div.replace(reg_header1, 'post');
+                                last_div = $(div.replace(reg_header2, dict['post']));
+
+                                last_div.find("input[name='post_key']")[0].value = k;
+                                last_div.find("input[name='post_value']")[0].value = v;
+
+                                let l = t.find(".layui-form-item");
+                                $(l[l.length - 1]).after(last_div);
+                            });
+                            if (last_div) {
+                                kv_focus(last_div.find("input[name='post_key']")[0]);
+                            }
+
+
+                            last_div = undefined;
+                            $.each(item.auth_header, function (k, v) {
+                                last_div = $(raw_div);
+
+                                last_div.find("input[name='header_key']")[0].value = k;
+                                last_div.find("input[name='header_value']")[0].value = v;
+
+                                let l = t.find(".layui-form-item");
+                                $(l[l.length - 1]).after(last_div);
+                            });
+                            if (last_div) {
+                                kv_focus(last_div.find("input[name='header_key']")[0]);
+                            }
+
+                            $(t.find(".layui-form-item")[2]).remove();
+                        });
+
+                        layui.element.render();
+                    }
+                } else if (data.system_type) {  // sso认证
+                    if (data.roles && data.roles.roles) {
+                        $.each(data.roles.roles, function (k, v) {
+                            let t = $("input[name=account][value=" + k + "]")[0];
+                            if (t) {
+                                t.checked = true;
+                                $($(t).parent().nextAll()[1]).find("input")[0].value = v;
+                            }
+                        });
+                        sso_input_update(data.roles.redirect_url, data.roles.portal_site);
+                    }
+                }
+            });
+        });
+
+        /**
+         * sso 认证
+         */
+        function sso_config_update() {
+            let url = $("#conf_form")[0].action;
+
+            let hosts = $("#ws_hosts").val().split(",");
+            let system_type = "sso";
+            let workspace_sso = {};
+            workspace_sso.roles = {};
+            workspace_sso.redirect_url = $("input[name='redirect_url']").val();
+            workspace_sso.portal_site = $("input[name='portal_site']").val();
+
+            $.each($("input[name='account']"), function (i, item) {
+                if (item.checked) {
+                    workspace_sso.roles[item.value] = $($(item).parent().nextAll()[1]).find("input")[0].value;
+                }
+            });
+
+            $.ajax({
+                url: url,
+                type: "PUT",
+                data: JSON.stringify({
+                    "hosts": hosts,
+                    "system_type": system_type,
+                    "workspace_sso": workspace_sso
+                }),
+                dataType: "json",
+                success: function (msg) {
+                    if (msg.flag !== 'success') {
+                        layer.msg(msg.data, {icon: 2});
+                    } else {
+                        let index = parent.layer.getFrameIndex(window.name);
+
+                        //关闭当前frame
+                        setTimeout('parent.layer.close(index);', 500);
+                        setTimeout('x_admin_father_reload()', 300);
+                    }
+                }, error: function () {
+                    layer.msg('操作异常', {icon: 2});
+                }
+            });
+        }
+
+        /**
+         * 手动录入认证信息
+         */
+        function auth_config_update() {
+            let url = $("#conf_form")[0].action;
+
+            let hosts = $("#ws_hosts").val().split(",");
+            let system_type = "direct";
+
+            let workspace_auth = [];
+
+            $.each($(".auth-collapse"), function (i, item) {
+                let auth = {};
+                auth['describe'] = $(item).find("input[name='role_describe']")[0].value;
+                auth['url_pattern'] = $(item).find("input[name='url_pattern']")[0].value;
+                auth['auth_header'] = {};
+                auth['auth_args'] = {};
+                auth['auth_param'] = {};
+
+                if (auth.describe.trim() !== "") {
+                    $.each($(item).find("input[name='header_key']"), function (_i, _item) {
+                        if (_item.value.trim() !== "") {
+                            auth['auth_header'][_item.value.trim()] =
+                                $($(_item).parent().next()[0]).find("input")[0].value.trim();
+                        }
+                    });
+                    $.each($(item).find("input[name='get_key']"), function (_i, _item) {
+                        if (_item.value.trim() !== "") {
+                            auth['auth_args'][_item.value.trim()] =
+                                $($(_item).parent().next()[0]).find("input")[0].value.trim();
+                        }
+                    });
+                    $.each($(item).find("input[name='post_key']"), function (_i, _item) {
+                        if (_item.value.trim() !== "") {
+                            auth['auth_param'][_item.value.trim()] =
+                                $($(_item).parent().next()[0]).find("input")[0].value.trim();
+                        }
+                    });
+                    workspace_auth.push(auth);
+                }
+            });
+
+            $.ajax({
+                url: url,
+                type: "PUT",
+                data: JSON.stringify({
+                    "hosts": hosts,
+                    "system_type": system_type,
+                    "workspace_auth": workspace_auth
+                }),
+                dataType: "json",
+                success: function (msg) {
+                    if (msg.flag !== 'success') {
+                        layer.msg(msg.data, {icon: 2});
+                    } else {
+                        let index = parent.layer.getFrameIndex(window.name);
+
+                        //关闭当前frame
+                        setTimeout('parent.layer.close(index);', 500);
+                        setTimeout('x_admin_father_reload()', 300);
+                    }
+                }, error: function () {
+                    layer.msg('操作异常', {icon: 2});
+                }
+            });
+        }
+
+        function save() {
+            if ($($("li.layui-this")[0]).attr('lay-id') === 'sso') {
+                sso_config_update();
+            } else if ($($("li.layui-this")[0]).attr('lay-id') === 'auth') {
+                auth_config_update();
+            }
+        }
+
+        function site_watch() {
+            let site = $("#site").val();
+            let url = location.protocol + "//" + document.domain + ":" + location.port +
+                "/api/watch";
+            $.post(url, JSON.stringify({
+                site: site
+            }), function (msg) {
+                if (msg.flag !== 'success') {
+                    layer.msg(msg.data, {icon: 2});
+                } else {
+                    $("#ws_hosts").val(msg.data.hs);
+                    sso_input_update(msg.data.redirect_url, msg.data.portal_site, msg.data.system_type);
+                }
+            });
+            return false;
+        }
+
+        function sso_input_update(redirect_url, portal_site) {
+            $("input[name='redirect_url']").val(redirect_url);
+            $("input[name='portal_site']").val(portal_site);
+
+            layui.form.render();
+        }
+
+        function banner_remove(self) {
+            $(self).parents()[1].remove();
+            return false;
+        }
+    </script>
+{% endblock %}
