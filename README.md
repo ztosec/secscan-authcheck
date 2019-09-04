@@ -1,6 +1,6 @@
 # 越权检测工具
 
-[项目介绍]()
+[项目介绍](https://mp.weixin.qq.com/s/vwF7aTvk-U-SnJqO3f80gA)
 
 # 快速开始
 
