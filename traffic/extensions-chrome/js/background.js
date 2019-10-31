@@ -63,14 +63,21 @@ function gen_body(body) {
     if (body) {
         let s = "";
         try {
-            body.raw.forEach(function (raw) {
-                if (raw.bytes) {
-                    let r = new Uint8Array(raw.bytes);
-                    s += String.fromCharCode.apply(null, r);
-                } else if (raw.file) { // 处理文件...
-                    console.log(raw.file);
+            if (body.raw) {
+                body.raw.forEach(function (raw) {
+                    if (raw.bytes) {
+                        let r = new Uint8Array(raw.bytes);
+                        s += String.fromCharCode.apply(null, r);
+                    } else if (raw.file) { // 处理文件...
+                        console.log(raw.file);
+                    }
+                });   
+            }else{
+                s = ""
+                for(var nu in body.formData){
+                    s += nu+"="+body.formData[nu]+"&";
                 }
-            });
+            }
         } catch (error) {
             console.log(error);
         }
