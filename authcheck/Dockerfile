@@ -16,7 +16,7 @@ ENV redis_db 0
 
 RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.ustc.edu.cn/g' /etc/apk/repositories
 
-RUN apk update && apk upgrade && apk add gcc g++ linux-headers python3 python3-dev
+RUN apk update && apk upgrade && apk add gcc g++ linux-headers python3 python3-dev py-pip
 
 COPY . /opt/authcheck
 
