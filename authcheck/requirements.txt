@@ -1,6 +1,6 @@
 Flask==1.0.2
 requests==2.21.0
-Flask-Cors==3.0.8
+Flask-Cors==3.0.9
 mongoengine==0.18.2
 APScheduler==3.6.0
 uWSGI==2.0.18
