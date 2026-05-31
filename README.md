@@ -1,5 +1,7 @@
 # 越权检测工具
 
+**语言**: 中文 | [English](README.en.md)
+
 [项目介绍](https://mp.weixin.qq.com/s/vwF7aTvk-U-SnJqO3f80gA)
 
 # 快速开始
@@ -18,7 +20,7 @@ docker-compose up -d
 - 启动示例站点
 
 ```bash
-cd example
+cd examples
 # 需要将 docker-compose.yml 中的 your-ip 替换为当前机器的ip，以便访问
 docker-compose up -d
 ```
@@ -165,7 +167,7 @@ authcheck/
 - 确定自动认证的流程需要哪些信息，并在 `app/model/po.py` 中添加相应的模型
 - `app/templates/` 下修改页面
 
-- `app/lib/identify` 下添加自己的认证流程，配置等
+- `app/core/identify` 下添加自己的认证流程，配置等
 
 目前工具中放入了一个简单的自动认证sso的示例，可参考修改
 
